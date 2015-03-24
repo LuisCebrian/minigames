@@ -1,6 +1,7 @@
 import pygame 
 import random
 import time
+import os
 
 pygame.init()
 pygame.key.set_repeat(100,50)
@@ -21,12 +22,12 @@ YELLOW =(235,180,0)
 COUNT = 0
 SPEED = 1
 
-fire_icon = pygame.image.load('fire.png')
+fire_icon = pygame.image.load(os.path.join('images','fire.png'))
 fire_icon = pygame.transform.scale(fire_icon,(350,350))
 fire_icon_rect = fire_icon.get_rect()
 fire_icon_rect.center = (WINDOWS_WIDTH/2,WINDOWS_HEIGHT/2-100)
 
-ice_icon = pygame.image.load('ice.png')
+ice_icon = pygame.image.load(os.path.join('images','ice.png'))
 ice_icon = pygame.transform.scale(ice_icon,(350,350))
 ice_icon_rect = ice_icon.get_rect()
 ice_icon_rect.center = (WINDOWS_WIDTH/2,WINDOWS_HEIGHT/2-100)
