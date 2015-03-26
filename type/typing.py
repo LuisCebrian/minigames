@@ -86,8 +86,8 @@ def move_text(text,speed):
     for i in d:
         del text[i]
 
-def newWord(dic):
-    word = random.choice(stopwords)
+def newWord(dic,choice):
+    word = stopwords[int(choice)]
     color_choice = random.randint(1,100)
     if color_choice > 3:
         if color_choice > 6:
@@ -98,6 +98,25 @@ def newWord(dic):
         color_choice=BLUE
     dic[word] = (random.randint(0,WINDOWS_WIDTH-int(FONT_SIZE*3.4)),0,color_choice)
 
+def function_choice(x_coef,c,limit):
+    if x_coef < 0:
+        lower = calc_x(0,x_coef,c)
+        upper = calc_y(0,x_coef,c)
+        if lower > limit:
+            lower = calc_y(limit,x_coef,c)
+            res = random.uniform(lower,upper)
+        else:
+            res = random.uniform(0,upper)
+    else:
+        lower = calc_x(0,x_coef,c)
+        upper = calc_y(limit,x_coef,c)
+        if lower < 0:
+            lower = calc_y(0,x_coef,c)
+            res = random.uniform(lower,upper)
+        else:
+            res = random.uniform(0,upper)
+    final = calc_x(res,x_coef,c)
+    return final 
 def fire_func(dic,count):
     red = (0,0,0)
     for i in range(1,255):
@@ -134,6 +153,7 @@ def displayStatusBar(dic,string,count,speed):
 def game_loop():
     string = ''
     prueba = {'prueba':(WINDOWS_WIDTH/2,15,WHITE)}
+    print(avg_len(prueba))
     time_spam = 1200
     pygame.time.set_timer(26,10000)
     pygame.time.set_timer(25,time_spam)
@@ -142,16 +162,24 @@ def game_loop():
     FIRE = 0
     ICE = 0
     init_clock = 0
+    M = -5.11
+    ROTATION_POINT = (float(len(stopwords)/2),4.0)
+    c = calc_c(ROTATION_POINT[1],ROTATION_POINT[0],M)
     while True:
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 exit()
             if event.type == 25 and ICE == 0:
-                newWord(prueba)
+                choice = function_choice(M,c,len(stopwords))
+                newWord(prueba,choice)
             if event.type == 26:
                 time_spam = int(time_spam*0.98)
                 pygame.time.set_timer(25,time_spam)
+                M+=0.31
+                print(M)
+                print(avg_len(prueba))
+                c = calc_c(ROTATION_POINT[1],ROTATION_POINT[0],M)
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_ESCAPE:
                     exit()
@@ -173,10 +201,10 @@ def game_loop():
                     break
                 string += chr(event.key)
         if prueba == {} and ICE == 0:
-            newWord(prueba)
+            choice = function_choice(M,c,len(stopwords))
+            newWord(prueba,choice)
 
         screen.fill(BLACK)
-        displayAllText(prueba)
         
         if FIRE:
             COUNT = fire_func(prueba,COUNT)
@@ -192,17 +220,32 @@ def game_loop():
                 ICE = 0
         else:
             move_text(prueba,SPEED)
-        
+        displayAllText(prueba)
         displayStatusBar(prueba,string,COUNT,SPEED)
         clock.tick(30)        
         pygame.display.update()
 
+#Function definition : y = x_coef*x + c
+def calc_x(y,x_coef,c):
+    return (y-c)/x_coef
+
+def calc_y(x,x_coef,c):
+    return x*x_coef+c
+
+def calc_c(y,x,x_coef):
+    return y-x*x_coef
+def avg_len(dic):
+    k = 0
+    for i in dic.keys():
+        k+=len(i)
+    k=k/float(len(dic.keys()))
+    return k
 
 stopwords = open('stopwords.txt','rU')
 stopwords = stopwords.readlines()
 stopwords = strip(stopwords)
 stopwords.sort(key = sorting)
 
-screen = pygame.display.set_mode(SCREEN_SIZE,pygame.FULLSCREEN,32)
+screen = pygame.display.set_mode(SCREEN_SIZE,0,32)
 clock = pygame.time.Clock()
 game_loop()
