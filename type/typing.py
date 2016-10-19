@@ -1,4 +1,4 @@
-import pygame 
+import pygame
 import random
 import time
 import os
@@ -6,7 +6,7 @@ import os
 pygame.init()
 pygame.key.set_repeat(100,50)
 pygame.mouse.set_visible(0)
-SCREEN_SIZE = (pygame.display.Info().current_w,pygame.display.Info().current_h) 
+SCREEN_SIZE = (pygame.display.Info().current_w,pygame.display.Info().current_h)
 WINDOWS_HEIGHT = SCREEN_SIZE[1]
 WINDOWS_WIDTH = SCREEN_SIZE[0]
 FONT_SIZE = int((WINDOWS_WIDTH+WINDOWS_HEIGHT)*0.04)
@@ -21,6 +21,7 @@ YELLOW =(235,180,0)
 
 COUNT = 0
 SPEED = 1
+
 
 fire_icon = pygame.image.load(os.path.join('images','fire.png'))
 fire_icon = pygame.transform.scale(fire_icon,(350,350))
@@ -46,8 +47,8 @@ def displayTextBottom(text):
     surfaceText = font.render(text,True,WHITE)
     surfaceRect = surfaceText.get_rect()
     surfaceRect.center = (WINDOWS_WIDTH/2,WINDOWS_HEIGHT-surfaceRect.height/2)
-    screen.blit(surfaceText,surfaceRect)     
-    
+    screen.blit(surfaceText,surfaceRect)
+
 def displayText(text,pos=(WINDOWS_WIDTH/2,WINDOWS_HEIGHT/2),color=WHITE,fontsize=FONT_SIZE,font_type='arial'):
     fontsize = int(fontsize)
     font = pygame.font.SysFont(font_type,fontsize)
@@ -55,7 +56,7 @@ def displayText(text,pos=(WINDOWS_WIDTH/2,WINDOWS_HEIGHT/2),color=WHITE,fontsize
     surfaceRect = surfaceText.get_rect()
     surfaceRect.top = pos[1]
     surfaceRect.left = pos[0]
-    screen.blit(surfaceText,surfaceRect)     
+    screen.blit(surfaceText,surfaceRect)
 
 def displayAllText(alltext):
     for i in alltext:
@@ -73,12 +74,12 @@ def test(string,lista):
         if i.startswith(string):
             color_matches(string,lista[i])
             success = True
-    return success 
+    return success
 def color_matches(string,pos):
    displayText(string,(pos[0],pos[1]),YELLOW,FONT_SIZE/2)
 
 def move_text(text,speed):
-    d =[] 
+    d =[]
     for i in text:
         text[i]=(text[i][0],text[i][1]+speed,text[i][2])
         if text[i][1] > WINDOWS_HEIGHT:
@@ -116,11 +117,11 @@ def function_choice(x_coef,c,limit):
         else:
             res = random.uniform(0,upper)
     final = calc_x(res,x_coef,c)
-    return final 
+    return final
 def fire_func(dic,count):
     red = (0,0,0)
     for i in range(1,255):
-        red = (i,0,0) 
+        red = (i,0,0)
         screen.fill(red)
         screen.blit(fire_icon,fire_icon_rect)
         displayCenterText('FIRE!',(WINDOWS_WIDTH/2,WINDOWS_HEIGHT/2+fire_icon_rect.height/2),YELLOW,FONT_SIZE*1.5,'ubuntumono')
@@ -143,12 +144,12 @@ def displayStatusBar(dic,string,count,speed):
         pygame.draw.rect(screen,GREEN,pygame.Rect(0,WINDOWS_HEIGHT-FONT_SIZE*1.1,WINDOWS_WIDTH,FONT_SIZE*1.1))
     else:
         pygame.draw.rect(screen,RED,pygame.Rect(0,WINDOWS_HEIGHT-FONT_SIZE*1.1,WINDOWS_WIDTH,FONT_SIZE*1.1))
-    
+
     pygame.draw.rect(screen,(10,10,10),pygame.Rect(0,WINDOWS_HEIGHT-FONT_SIZE*1.1,5,FONT_SIZE*1.1))
     pygame.draw.rect(screen,(10,10,10),pygame.Rect(WINDOWS_WIDTH-5,WINDOWS_HEIGHT-FONT_SIZE*1.1,5,FONT_SIZE*1.1))
     displayText('SCORE: ' + str(count),(WINDOWS_WIDTH*0.8,WINDOWS_HEIGHT-FONT_SIZE*0.8),GREY,FONT_SIZE/2,'ubuntumono')
     displayText('SPEED: x' + str(round(speed,1)),(WINDOWS_WIDTH*0.01,WINDOWS_HEIGHT-FONT_SIZE*0.8),GREY,FONT_SIZE/2,'ubuntumono')
-    displayTextBottom(string) 
+    displayTextBottom(string)
     pygame.draw.rect(screen,(10,10,10),pygame.Rect(0,WINDOWS_HEIGHT-5,WINDOWS_WIDTH,5))
 def game_loop():
     string = ''
@@ -157,7 +158,7 @@ def game_loop():
     time_spam = 1200
     pygame.time.set_timer(26,10000)
     pygame.time.set_timer(25,time_spam)
-    COUNT = 0 
+    COUNT = 0
     SPEED = 1
     FIRE = 0
     ICE = 0
@@ -205,7 +206,7 @@ def game_loop():
             newWord(prueba,choice)
 
         screen.fill(BLACK)
-        
+
         if FIRE:
             COUNT = fire_func(prueba,COUNT)
             prueba = {}
@@ -222,7 +223,7 @@ def game_loop():
             move_text(prueba,SPEED)
         displayAllText(prueba)
         displayStatusBar(prueba,string,COUNT,SPEED)
-        clock.tick(30)        
+        clock.tick(30)
         pygame.display.update()
 
 #Function definition : y = x_coef*x + c
@@ -246,6 +247,6 @@ stopwords = stopwords.readlines()
 stopwords = strip(stopwords)
 stopwords.sort(key = sorting)
 
-screen = pygame.display.set_mode(SCREEN_SIZE,0,32)
+screen = pygame.display.set_mode(SCREEN_SIZE,pygame.FULLSCREEN,32)
 clock = pygame.time.Clock()
 game_loop()
