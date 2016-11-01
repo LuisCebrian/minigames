@@ -51,7 +51,8 @@ var stelaGeometry = new THREE.PlaneGeometry(1,1,1,1);
 var stelaBoxGeometry = new THREE.BoxGeometry(1,1,1);
 
 //Players variables
-var box1; var boxCore1;
+var box1 = new THREE.Object3D();
+var boxCore1;
 var player1;
 var dir1 = new THREE.Vector3(0,0,-1);
 var stela1;
@@ -116,6 +117,7 @@ function init(){
     document.body.appendChild(stats.dom);
 
     document.addEventListener('keydown',manageInput);
+    window.addEventListener('resize',onResize);
 }
 
 function loadInstructions(){
@@ -135,7 +137,7 @@ function loadInstructions(){
     } );
 }
 
-function loadScene(){
+function loadScene(color){
     //Light
     scene.add( new THREE.AmbientLight( 0xeef0ff ) );
     var directional = new THREE.DirectionalLight( 0xffffff, 2 );
@@ -169,14 +171,62 @@ function loadScene(){
     setUpPlayer2();
 }
 
+function loadBike(color,bikeRotation){
+    var colorMaterial;
+    if (color == "red"){
+        colorMaterial = redTextureMaterial;
+    }else{
+        colorMaterial = blueTextureMaterial;
+    }
+    var bike = new THREE.Object3D();
+    var loader = new THREE.OBJLoader( );
+	loader.load( 'contents/models/cycle_body.obj', function ( object ) {
+		object.traverse( function ( child ) {
+			if ( child instanceof THREE.Mesh ) {
+				child.material = colorMaterial;
+			}
+		} );
+        object.rotation.x = -Math.PI/2;
+        object.position.y =-0.3;
+		bike.add( object );
+	});
+	loader.load( 'contents/models/cycle_rear.obj', function ( object ) {
+		object.traverse( function ( child ) {
+			if ( child instanceof THREE.Mesh ) {
+				child.material = blackMaterial;
+			}
+		} );
+        object.rotation.x = Math.PI/2;
+        object.position.y = 0.5;
+		bike.add( object );
+	});
+	loader.load( 'contents/models/cycle_front.obj', function ( object ) {
+		object.traverse( function ( child ) {
+			if ( child instanceof THREE.Mesh ) {
+				child.material = blackMaterial;
+			}
+		} );
+        object.position.x = 1.6;
+        object.position.y = 0.3;
+        object.rotation.x = Math.PI/2;
+		bike.add( object );
+	});
+    bike.rotation.y = bikeRotation;
+    return bike;
+}
+
 function setUpPlayer1(){
     player1 = new THREE.Object3D();
     player1.name = "Player 1";
     var boxGeometry = new THREE.BoxGeometry(1,1,1);
 
+    /*
     box1 = new THREE.Mesh(boxGeometry,wireframeMaterial);
     box1.position.set(0,0.5,-0.5);
     box1.scale.x = 0.5;
+    */
+    var bike = loadBike("red",Math.PI/2);
+    box1.add(bike);
 
     boxCore1 = new THREE.Mesh(boxGeometry,redMaterial);
     boxCore1.scale.set(0.3,0.8,0.79);
@@ -200,10 +250,12 @@ function setUpPlayer2(){
     player2.name = "Player 2";
 
     var boxGeometry = new THREE.BoxGeometry(1,1,1);
-
+    /*
     box2 = new THREE.Mesh(boxGeometry,wireframeMaterial);
     box2.position.set(0,0.5,+0.5);
     box2.scale.x = 0.5;
+    */
+    box2 = loadBike("blue", -Math.PI/2);
 
     boxCore2 = new THREE.Mesh(boxGeometry,blueMaterial);
     boxCore2.scale.set(0.3,0.8,0.79);
@@ -385,7 +437,7 @@ function collision(boxCore,box,player){
 	var originPoint = boxCore.getWorldPosition().clone();
 	for (var vertexIndex = 0; vertexIndex < boxCore.geometry.vertices.length; vertexIndex++)
 	{
-		var localVertex = box.geometry.vertices[vertexIndex].clone();
+		var localVertex = boxCore.geometry.vertices[vertexIndex].clone();
         var mt = player.matrix.clone();
         mt.multiply(boxCore.matrix);
         var globalVertex = localVertex.applyMatrix4( mt );
@@ -471,4 +523,16 @@ function gameOver(winner){
         }
         displayText("(Press Intro to restart)",10,whiteMaterial,new THREE.Vector3(1000,900,1200));
     } );
+}
+
+function onResize(){
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    var aspectRatio = window.innerWidth / window.innerHeight;
+    camera1.aspect = 2*aspectRatio;
+    camera2.aspect = 2*aspectRatio;
+    camera1.updateProjectionMatrix();
+    camera2.updateProjectionMatrix();
+
+    camera.aspect = aspectRatio;
+    camera.updateProjectionMatrix();
 }
