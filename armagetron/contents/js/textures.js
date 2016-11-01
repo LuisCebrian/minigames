@@ -72,17 +72,13 @@ function loadScene(){
     loader.load( 'contents/fonts/helvetiker_bold.typeface.json', function ( font ) {
 
         var textGeo = new THREE.TextGeometry( "My Text \n Hola", {
-
             font: font,
-
             size: 20,
             height: 0,
             curveSegments: 4,
-
             bevelThickness: 2,
             bevelSize: 1,
             bevelEnabled: true
-
         } );
 
         var textMaterial = new THREE.MeshPhongMaterial( { color: 0xff0000 } );

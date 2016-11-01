@@ -11,7 +11,8 @@ var fontLoader = new THREE.FontLoader();
 var sizeBoard = 200;
 var velocity = 40;
 var collidableMeshList = [];
-
+var textMenu = new THREE.Object3D();
+textMenu.name = "menu";
 //Fonts
 var fontProperties ={
     size: 20,
@@ -24,8 +25,9 @@ var fontProperties ={
 
 //Materials and textures
 var whiteMaterial = new THREE.MeshPhongMaterial({color:0xffffff, side: THREE.DoubleSide});
+var orangeMaterial = new THREE.MeshPhongMaterial({color: 0xffAA00, side: THREE.DoubleSide})
 var redMaterial = new THREE.MeshPhongMaterial({color: 0xff0000, side: THREE.DoubleSide});
-var blueMaterial = new THREE.MeshPhongMaterial({color: 0x0000ff, side: THREE.BackSide});
+var blueMaterial = new THREE.MeshPhongMaterial({color: 0x0000ff, side: THREE.DoubleSide});
 var bikeWallTexture = textureLoader.load("contents/textures/dir_wall.png");
 bikeWallTexture.wrapS = bikeWallTexture.wrapT = THREE.RepeatWrapping;
 bikeWallTexture.repeat.set(3,1);
@@ -57,6 +59,7 @@ var dir1 = new THREE.Vector3(0,0,-1);
 //FLAGS
 var FLAG_PAUSE = false;
 var FLAG_INIT_GAME = true;
+var FLAG_GAME_OVER = false;
 init();
 loadInstructions();
 loadScene();
@@ -65,57 +68,17 @@ animate();
 function loadInstructions(){
     fontLoader.load( 'contents/fonts/helvetiker_bold.typeface.json', function ( font ) {
         fontProperties.font = font;
-
         // game Title
-        var textGeo = new THREE.TextGeometry( "Armagetron", fontProperties);
-        var mesh = new THREE.Mesh( textGeo, redMaterial);
-        textGeo.computeBoundingBox();
-        var centerOffset = -0.5 * ( textGeo.boundingBox.max.x - textGeo.boundingBox.min.x );
-        mesh.position.set(1000+centerOffset,1080,1200);
-        scene.add( mesh );
-
+        displayText("Armagetron",25,orangeMaterial,new THREE.Vector3(1000,1080,1200));
         //Player 1
-        fontProperties.size = 15;
-        var textPlayer1 = new THREE.TextGeometry( "Player 1", fontProperties);
-        textPlayer1.computeBoundingBox();
-        mesh = new THREE.Mesh(textPlayer1,whiteMaterial);
-        centerOffset =  -0.5 * ( textPlayer1.boundingBox.max.x - textPlayer1.boundingBox.min.x );
-        mesh.position.set(900+centerOffset,1020,1200);
-        scene.add(mesh);
-
-        fontProperties.size = 10;
-        var controls = new THREE.TextGeometry("Controls: A and D",fontProperties);
-        controls.computeBoundingBox();
-        mesh = new THREE.Mesh(controls,whiteMaterial);
-        centerOffset =  -0.5 * ( controls.boundingBox.max.x - controls.boundingBox.min.x );
-        mesh.position.set(900+centerOffset,980,1200);
-        scene.add(mesh);
-
+        displayText("Player 1",15,redMaterial,new THREE.Vector3(900,1020,1200));
+        displayText("Controls: A and D", 10, whiteMaterial, new THREE.Vector3(900,980,1200));
         //Player 2
-        fontProperties.size = 15;
-        var textPlayer2 = new THREE.TextGeometry( "Player 2", fontProperties);
-        textPlayer2.computeBoundingBox();
-        mesh = new THREE.Mesh(textPlayer2,whiteMaterial);
-        centerOffset =  -0.5 * ( textPlayer2.boundingBox.max.x - textPlayer2.boundingBox.min.x );
-        mesh.position.set(1100+centerOffset,1020,1200);
-        scene.add(mesh);
-
-        fontProperties.size = 10;
-        controls = new THREE.TextGeometry("Controls: Left and Right",fontProperties);
-        controls.computeBoundingBox();
-        mesh = new THREE.Mesh(controls,whiteMaterial);
-        centerOffset =  -0.5 * ( controls.boundingBox.max.x - controls.boundingBox.min.x );
-        mesh.position.set(1100+centerOffset,980,1200);
-        scene.add(mesh);
-
+        displayText("Player 2",15,blueMaterial,new THREE.Vector3(1100,1020,1200));
+        displayText("Controls: Left and Right", 10, whiteMaterial, new THREE.Vector3(1100,980,1200));
         //Intro to begin
-        fontProperties.size = 10;
-        controls = new THREE.TextGeometry("(Press Intro to Begin)", fontProperties);
-        controls.computeBoundingBox();
-        mesh = new THREE.Mesh(controls,whiteMaterial);
-        centerOffset =  -0.5 * ( controls.boundingBox.max.x - controls.boundingBox.min.x );
-        mesh.position.set(1000+centerOffset,920,1200);
-        scene.add(mesh);
+        displayText("(Press Intro to Begin)", 10, whiteMaterial, new THREE.Vector3(1000,920,1200));
+        scene.add(textMenu);
     } );
 }
 function init(){
@@ -161,7 +124,6 @@ function init(){
     camera2.lookAt(new THREE.Vector3(0,50,0));
     scene.add(camera2);
     */
-
     document.addEventListener('keydown',manageInput);
 }
 
@@ -240,6 +202,14 @@ function manageInput(event){
         newStela();
         dir1.applyAxisAngle(new THREE.Vector3(0,1,0),-Math.PI/2);
     }
+    //Left
+    if(event.keyCode == 37){
+
+    }
+    //Right
+    if(event.keyCode == 39){
+        
+    }
     //Space
     if (event.keyCode == 32){
         if(FLAG_PAUSE)
@@ -250,7 +220,12 @@ function manageInput(event){
     }
     //Intro
     if (event.keyCode == 13){
+        if(FLAG_GAME_OVER){
+            location.reload();
+        }
         FLAG_INIT_GAME = !FLAG_INIT_GAME;
+        cleanTextMenu();
+        console.log(textMenu);
     }
 }
 
@@ -266,10 +241,12 @@ function newStela(){
 function animate(){
     stats.begin();
     render();
-    if (!FLAG_PAUSE)
-        update();
-    else {
-        clock.getDelta();
+    if (!FLAG_INIT_GAME){
+        if (!FLAG_PAUSE)
+            update();
+        else {
+            clock.getDelta();
+        }
     }
     stats.end();
     requestAnimationFrame(animate);
@@ -318,13 +295,15 @@ function checkCollision(){
 		var collisionResults = ray.intersectObjects( collidableMeshList );
 		if ( collisionResults.length > 0 && collisionResults[0].distance <= directionVector.length() ){
             FLAG_PAUSE = true;
+            FLAG_GAME_OVER = true;
+            gameOver("Player 1");
         }
 	}
 
 }
 
 function render(){
-    if(FLAG_INIT_GAME){
+    if(FLAG_INIT_GAME || FLAG_GAME_OVER){
         renderer.clear();
         renderer.render(scene,camera);
     }else{
@@ -349,4 +328,34 @@ function render(){
     renderer.setViewport(1, 1, window.innerWidth - 2, 0.5 * window.innerHeight -2);
     renderer.render(scene,camera2);
     */
+}
+
+function displayText(text,size,material,position){
+    fontProperties.size = size;
+    var textGeo = new THREE.TextGeometry( text, fontProperties);
+    var mesh = new THREE.Mesh(textGeo, material);
+    textGeo.computeBoundingBox();
+    var centerOffset = -0.5 * ( textGeo.boundingBox.max.x - textGeo.boundingBox.min.x );
+    mesh.position.set(position.x+centerOffset,position.y,position.z);
+    textMenu.add(mesh);
+    console.log("uy");
+}
+
+function cleanTextMenu(){
+    scene.remove(textMenu);
+    textMenu = new THREE.Object3D();
+    scene.add(textMenu);
+}
+function gameOver(winner){
+    fontLoader.load( 'contents/fonts/helvetiker_bold.typeface.json', function ( font ) {
+        fontProperties.font = font;
+        displayText("GAME OVER",35,orangeMaterial,new THREE.Vector3(1000,1060,1200));
+        //Display Winner
+        if (winner == "Player 1"){
+            displayText(winner + " wins", 15, redMaterial, new THREE.Vector3(1000,980,1200));
+        }else{
+            displayText(winner + " wins", 15, blueMaterial, new THREE.Vector3(1000,980,1200));
+        }
+        displayText("(Press Intro to restart)",10,whiteMaterial,new THREE.Vector3(1000,900,1200));
+    } );
 }
