@@ -1,30 +1,47 @@
 //Variables threejs
-var renderer, scene, camera1, camera2;
+var renderer, scene, camera, camera1, camera2;
 var cameraControls;
-var keyboard = new THREEx.KeyboardState();
 var stela;
 var stats;
 var clock = new THREE.Clock();
 var textureLoader = new THREE.TextureLoader();
+var fontLoader = new THREE.FontLoader();
 
 //GAME VARIABLES
 var sizeBoard = 200;
 var velocity = 40;
 var collidableMeshList = [];
 
+//Fonts
+var fontProperties ={
+    size: 20,
+    height: 0,
+    curveSegments: 4,
+    bevelThickness: 1,
+    bevelSize: 0,
+    bevelEnabled: true
+}
+
 //Materials and textures
+var whiteMaterial = new THREE.MeshPhongMaterial({color:0xffffff, side: THREE.DoubleSide});
 var redMaterial = new THREE.MeshPhongMaterial({color: 0xff0000, side: THREE.DoubleSide});
+var blueMaterial = new THREE.MeshPhongMaterial({color: 0x0000ff, side: THREE.BackSide});
 var bikeWallTexture = textureLoader.load("contents/textures/dir_wall.png");
 bikeWallTexture.wrapS = bikeWallTexture.wrapT = THREE.RepeatWrapping;
 bikeWallTexture.repeat.set(3,1);
+var ceilingTexture = textureLoader.load('contents/textures/sky.png')
+ceilingTexture.wrapS = ceilingTexture.wrapT = THREE.RepeatWrapping;
+ceilingTexture.repeat.set(2,2);
+var ceilingMaterial = new THREE.MeshPhongMaterial({color:0xffffff, side: THREE.DoubleSide, map: ceilingTexture, transparent: true});
 var redTextureMaterial = new THREE.MeshPhongMaterial({color: 0xff0000, side: THREE.DoubleSide, map: bikeWallTexture});
 var blueTextureMaterial = new THREE.MeshPhongMaterial({color: 0x0000ff, side: THREE.DoubleSide, map: bikeWallTexture});
 var blackMaterial = new THREE.MeshPhongMaterial({color: 0x000000, side: THREE.DoubleSide});
 var wireframeMaterial = new THREE.MeshBasicMaterial({color: 'blue', wireframe: true});
 var wallTexture = textureLoader.load("contents/textures/rim_wall.png");
-var wallMaterial = new THREE.MeshPhongMaterial({color: 0xffffff, side: THREE.DoubleSide, map:wallTexture})
-wallTexture.wrapS = wallTexture.wrapT = THREE.RepeatWrapping;
-wallTexture.repeat.set(3,1);
+var wallMaterial = new THREE.MeshPhongMaterial({color: 0xffffff, side: THREE.BackSide, map:wallTexture})
+wallTexture.wrapS = THREE.RepeatWrapping;
+wallTexture.wrapT = THREE.MirroredRepeatWrappin;
+wallTexture.repeat.set(3,2);
 
 
 //POSITION STELAS
@@ -39,17 +56,74 @@ var dir1 = new THREE.Vector3(0,0,-1);
 
 //FLAGS
 var FLAG_PAUSE = false;
-
+var FLAG_INIT_GAME = true;
 init();
+loadInstructions();
 loadScene();
 animate();
 
+function loadInstructions(){
+    fontLoader.load( 'contents/fonts/helvetiker_bold.typeface.json', function ( font ) {
+        fontProperties.font = font;
+
+        // game Title
+        var textGeo = new THREE.TextGeometry( "Armagetron", fontProperties);
+        var mesh = new THREE.Mesh( textGeo, redMaterial);
+        textGeo.computeBoundingBox();
+        var centerOffset = -0.5 * ( textGeo.boundingBox.max.x - textGeo.boundingBox.min.x );
+        mesh.position.set(1000+centerOffset,1080,1200);
+        scene.add( mesh );
+
+        //Player 1
+        fontProperties.size = 15;
+        var textPlayer1 = new THREE.TextGeometry( "Player 1", fontProperties);
+        textPlayer1.computeBoundingBox();
+        mesh = new THREE.Mesh(textPlayer1,whiteMaterial);
+        centerOffset =  -0.5 * ( textPlayer1.boundingBox.max.x - textPlayer1.boundingBox.min.x );
+        mesh.position.set(900+centerOffset,1020,1200);
+        scene.add(mesh);
+
+        fontProperties.size = 10;
+        var controls = new THREE.TextGeometry("Controls: A and D",fontProperties);
+        controls.computeBoundingBox();
+        mesh = new THREE.Mesh(controls,whiteMaterial);
+        centerOffset =  -0.5 * ( controls.boundingBox.max.x - controls.boundingBox.min.x );
+        mesh.position.set(900+centerOffset,980,1200);
+        scene.add(mesh);
+
+        //Player 2
+        fontProperties.size = 15;
+        var textPlayer2 = new THREE.TextGeometry( "Player 2", fontProperties);
+        textPlayer2.computeBoundingBox();
+        mesh = new THREE.Mesh(textPlayer2,whiteMaterial);
+        centerOffset =  -0.5 * ( textPlayer2.boundingBox.max.x - textPlayer2.boundingBox.min.x );
+        mesh.position.set(1100+centerOffset,1020,1200);
+        scene.add(mesh);
+
+        fontProperties.size = 10;
+        controls = new THREE.TextGeometry("Controls: Left and Right",fontProperties);
+        controls.computeBoundingBox();
+        mesh = new THREE.Mesh(controls,whiteMaterial);
+        centerOffset =  -0.5 * ( controls.boundingBox.max.x - controls.boundingBox.min.x );
+        mesh.position.set(1100+centerOffset,980,1200);
+        scene.add(mesh);
+
+        //Intro to begin
+        fontProperties.size = 10;
+        controls = new THREE.TextGeometry("(Press Intro to Begin)", fontProperties);
+        controls.computeBoundingBox();
+        mesh = new THREE.Mesh(controls,whiteMaterial);
+        centerOffset =  -0.5 * ( controls.boundingBox.max.x - controls.boundingBox.min.x );
+        mesh.position.set(1000+centerOffset,920,1200);
+        scene.add(mesh);
+    } );
+}
 function init(){
 
     //Renderer setup
     renderer = new THREE.WebGLRenderer({antialias:true});
     renderer.setSize(window.innerWidth, window.innerHeight)
-    renderer.setClearColor(new THREE.Color(0x0000AA));
+    renderer.setClearColor(new THREE.Color(0x000000));
     renderer.autoClear = false;
     document.getElementById('container').appendChild(renderer.domElement);
 
@@ -59,8 +133,15 @@ function init(){
     //Camera setup
     var aspectRatio = window.innerWidth / window.innerHeight;
     var viewAngle = 45; var near = 0.1; var far = 20000
+
+    //Camera used to display text
+    camera = new THREE.PerspectiveCamera(viewAngle, aspectRatio, near, far);
+    camera.position.set(1000,1000,1500);
+    camera.lookAt(new THREE.Vector3(1000,1000,1000));
+    scene.add(camera);
+    //Camera player 1
     camera1 = new THREE.PerspectiveCamera(viewAngle, aspectRatio, near, far);
-    camera1.position.set(30,5,0);
+    camera1.position.set(10,5,0);
     camera1.lookAt(new THREE.Vector3(0,0,0));
     scene.add(camera1);
 
@@ -100,12 +181,18 @@ function loadScene(){
 
     var blackFloor = new THREE.Mesh(planeGeometry,blackMaterial);
     blackFloor.rotation.x = Math.PI/2;
-    blackFloor.position.y = -0.5;
+    blackFloor.position.y = -0.99;
     scene.add(blackFloor);
 
-    var wallBox = new THREE.BoxGeometry(sizeBoard,sizeBoard/4,sizeBoard);
+    var blackCeiling = new THREE.Mesh(planeGeometry,ceilingMaterial);
+    blackCeiling.rotation.x = Math.PI/2;
+    blackCeiling.position.y = sizeBoard/4 - 2;
+    scene.add(blackCeiling);
+
+
+    var wallBox = new THREE.BoxGeometry(sizeBoard,sizeBoard/2,sizeBoard);
     var wallMesh = new THREE.Mesh(wallBox,wallMaterial);
-    wallMesh.position.y = sizeBoard/8 - 1;
+    wallMesh.position.y = sizeBoard/4 - 1;
     scene.add(wallMesh);
 
     //Players
@@ -134,16 +221,6 @@ function loadScene(){
     //Axis Helper
     var axisHelper = new THREE.AxisHelper( 5 );
     scene.add( axisHelper );
-
-    var mv = new TWEEN.Tween(camera1.position).to({x: player.position.x, y: player.position.y, z: player.position.z}, 3000).onUpdate(function(){
-        camera1.position.set(this.x,this.y+5,this.z);
-        //camera1.lookAt(player.position);
-    }).onComplete(function(){
-        camera1.lookAt(player.position);
-    });
-    mv.easing(TWEEN.Easing.Bounce.Out);
-    mv.interpolation( TWEEN.Interpolation.Bezier );
-    mv.start();
 }
 
 function manageInput(event){
@@ -170,6 +247,10 @@ function manageInput(event){
         else {
             FLAG_PAUSE = true;
         }
+    }
+    //Intro
+    if (event.keyCode == 13){
+        FLAG_INIT_GAME = !FLAG_INIT_GAME;
     }
 }
 
@@ -215,10 +296,9 @@ function update(){
     updateStela(delta);
     checkCollision();
     updateCamera();
-    TWEEN.update();
 }
 function updateCamera(){
-    camera1.position.set(player.position.x+20,player.position.y+5,player.position.z);
+    camera1.position.set(player.position.x+10,player.position.y+5,player.position.z+30);
     camera1.lookAt(player.position);
 }
 
@@ -244,7 +324,13 @@ function checkCollision(){
 }
 
 function render(){
-    renderer.render(scene,camera1);
+    if(FLAG_INIT_GAME){
+        renderer.clear();
+        renderer.render(scene,camera);
+    }else{
+        renderer.clear();
+        renderer.render(scene,camera1);
+    }
     /*
     var aspectRatio = window.innerWidth / window.innerHeight;
     camera1.aspect = 2*aspectRatio;

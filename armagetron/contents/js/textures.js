@@ -3,15 +3,17 @@ var renderer, scene, camera;
 var cameraControls;
 var clock = new THREE.Clock();
 
+var fontLoader = new THREE.FontLoader();
+var redMaterial = new THREE.MeshBasicMaterial({color: 'red'});
 var box;
 init();
 loadScene();
-startAnimation();
+//startAnimation();
 render();
 
 function init(){
     //Configurar el motor de renderer
-    renderer = new THREE.WebGLRenderer();
+    renderer = new THREE.WebGLRenderer({antialias: true});
     renderer.setSize(window.innerWidth, window.innerHeight)
     renderer.setClearColor(new THREE.Color(0x0000AA));
     document.getElementById('container').appendChild(renderer.domElement);
@@ -43,14 +45,7 @@ function manageInput(event){
         box.position.x -= 1
     }
 }
-function startAnimation(){
-    var mv = new TWEEN.Tween(camera.position).to(box.position, 10000).onUpdate(function(){
-        camera.position.set(this.x,this.y,this.z);
-    });
-    mv.easing(TWEEN.Easing.Bounce.Out);
-    mv.interpolation( TWEEN.Interpolation.Bezier );
-    mv.start();
-}
+
 function loadScene(){
     //LIGHTS
 	var ambient = new THREE.AmbientLight( 0x444444 );
@@ -71,12 +66,34 @@ function loadScene(){
     box = new THREE.Mesh(boxGeometry,wireframeMaterial);
 
     scene.add(box);
-    var loader = new THREE.TextureLoader();
-    // load a resource
-    var texture = loader.load('contents/textures/rim_wall.png');
-    var textureMaterial = new THREE.MeshPhongMaterial({color: 0xffffff, side: THREE.DoubleSide, map:texture})
-    textureMaterial.wrapS = textureMaterial.wrapT = THREE.RepeatWrapping;
 
+    var loader = new THREE.FontLoader();
+
+    loader.load( 'contents/fonts/helvetiker_bold.typeface.json', function ( font ) {
+
+        var textGeo = new THREE.TextGeometry( "My Text \n Hola", {
+
+            font: font,
+
+            size: 20,
+            height: 0,
+            curveSegments: 4,
+
+            bevelThickness: 2,
+            bevelSize: 1,
+            bevelEnabled: true
+
+        } );
+
+        var textMaterial = new THREE.MeshPhongMaterial( { color: 0xff0000 } );
+
+        var mesh = new THREE.Mesh( textGeo, textMaterial );
+        textGeo.computeBoundingBox();
+        var centerOffset = -0.5 * ( textGeo.boundingBox.max.x - textGeo.boundingBox.min.x );
+        mesh.position.x = centerOffset;
+        scene.add( mesh );
+
+    } );
 //PRUEBA
 /*
 	var onProgress = function ( xhr ) {
@@ -113,7 +130,7 @@ function loadScene(){
 
 function update(){
     var time = clock.getDelta();
-    TWEEN.update();
+    //TWEEN.update();
 }
 
 function render(){
